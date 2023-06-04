@@ -1,0 +1,39 @@
+{
+    "DatasetName": ["CAS", "THU","DPN","BITBRAIN"],
+    "Dataset": {
+        
+        "CAS": {
+            "subject_num": 14
+        },
+        "THU": {
+            "subject_num": 64
+        },
+        "DPN":{
+            "subject_num":3
+        },
+        "BITBRAIN":{
+            "subject_num":4
+        }
+    },
+    "MSOA": {
+        "NetworkPara": {
+            "channels": 64,
+            "T": 256,
+            "n_kernel_t": 8,
+            "n_kernel_s": 16,
+            "dropout": 0.5,
+            "kernel_length": 64
+        }
+    },
+    "TrainPara":{
+        "batch_size": 128,
+        "epoch": 60
+    },
+    "TestPara":{
+        "batch_size": 32,
+        "epoch": 25
+    },
+    "EEGNet":{
+
+    }
+}
