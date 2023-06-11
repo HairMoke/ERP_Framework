@@ -1134,18 +1134,21 @@ def FFT_for_Period(x, k=2):
 
 
 class TimesBlock(nn.Module):
-    def __init__(self, configs):
+    def __init__(self):
         super(TimesBlock, self).__init__()
-        self.seq_len = configs.seq_len
-        self.pred_len = configs.pred_len
-        self.k = configs.top_k
+        self.seq_len = 256
+        self.pred_len = 256
+        self.k = 5          #top_k
+        self.d_model = 64
+        self.d_ff = 64      #dff,全卷积的维度
+        self.num_kernels = 6
         # parameter-efficient design
         self.conv = nn.Sequential(
-            Inception_Block_V1(configs.d_model, configs.d_ff,    #dff,全卷积的维度
-                               num_kernels=configs.num_kernels),
+            Inception_Block_V1(self.d_model, self.d_ff,    
+                               num_kernels=self.num_kernels),
             nn.GELU(),
-            Inception_Block_V1(configs.d_ff, configs.d_model,               #也就是说这里，TimesBlock输出的维度是d_model。那怎么把它再拼成一维？
-                               num_kernels=configs.num_kernels)
+            Inception_Block_V1(self.d_ff, self.d_model,               #也就是说这里，TimesBlock输出的维度是d_model。那怎么把它再拼成一维？
+                               num_kernels=self.num_kernels)
         )
 
     def forward(self, x):           #因为nn.Module这个父类里有__call__调用了forward，所以在实例化TimesBlock时，会自动调用forward
@@ -1185,26 +1188,29 @@ class TimesBlock(nn.Module):
 
 class TimesNet(nn.Module):
 
-    def __init__(self, configs):
+    def __init__(self, numclass):
         super(TimesNet, self).__init__()
-        self.configs = configs
-        self.task_name = configs.task_name
-        self.seq_len = configs.seq_len
-        self.label_len = configs.label_len
-        self.pred_len = configs.pred_len
-        self.model = nn.ModuleList([TimesBlock(configs)
-                                    for _ in range(configs.e_layers)])
-        self.enc_embedding = DataEmbedding(configs.enc_in, configs.d_model, configs.embed, configs.freq,
-                                           configs.dropout)
-        self.layer = configs.e_layers
-        self.layer_norm = nn.LayerNorm(configs.d_model)
+        self.e_layers = 2        #num of encoder layers
+        self.seq_len = 256    #input sequence length
+        
+        self.model = nn.ModuleList([TimesBlock()
+                                    for _ in range(self.e_layers)])
+        self.layer = 2
+        self.layer_norm = nn.LayerNorm(6)   #  6 为 dimension of model
 
-            self.act = F.gelu
-            self.dropout = nn.Dropout(configs.dropout)
-            self.projection = nn.Linear(
-                configs.d_model * configs.seq_len, configs.num_class)
-
-    def classification(self, x_enc, x_mark_enc):
+        self.act = F.gelu
+        self.dropout = nn.Dropout(0.1)
+        self.projection = nn.Linear(64 * self.seq_len, numclass)
+        
+        
+        self.enc_in =    38           #encoder input size
+        self.d_model =    7           #decoder input size'
+        self.embed = 'timeF'
+        self.freq = 's'             
+        self.enc_embedding = DataEmbedding(self.enc_in, self.d_model, self.embed, self.freq,
+                                           self.dropout)
+        
+    def classification(self, x_enc):
         # embedding
         enc_out = self.enc_embedding(x_enc, None)  # [B,T,C]
         # TimesNet
@@ -1215,16 +1221,72 @@ class TimesNet(nn.Module):
         # the output transformer encoder/decoder embeddings don't include non-linearity
         output = self.act(enc_out)
         output = self.dropout(output)
-        # zero-out padding embeddings
-        output = output * x_mark_enc.unsqueeze(-1)
+
         # (batch_size, seq_length * d_model)
         output = output.reshape(output.shape[0], -1)
         output = self.projection(output)  # (batch_size, num_classes)
         return output
 
-    def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, mask=None):
-        dec_out = self.classification(x_enc, x_mark_enc)
+    def forward(self, x_enc):
+        dec_out = self.classification(x_enc)
         return dec_out  # [B, N]
+
+
+
+class EEG3d(nn.Module):
+    def __init__(self, num_classes):
+        super(EEG3d, self).__init__()
+        self.drop_out = 0.6
+#输入数据维度（1,1,256，10，11,）
+        self.block_1 = nn.Sequential(
+            # nn.ZeroPad2d((15, 16, 0, 0)),
+            nn.Conv3d(1, 8, (32, 1, 1), padding=(16,0,0),bias=False),
+            # PrintLayer(),
+            nn.BatchNorm3d(8),
+            # nn.AvgPool3d((1,3,3))   #这里eegnet本身没有池化，可能因为二维数据通道信息太少。但这里10,11的mesh其实也只比64多了一点，不一定需要池化，不然把好不容易扩充的语义信息又失去。       
+        )
+        
+        # block 2 and 3 are implements of Depthwise Conv and Separable Conv
+        self.block_2 = nn.Sequential(
+            nn.Conv3d(8, 16, (1,3,3), groups=8, bias=False),         #这里(8,1)中8是脑电通道，可以改成64
+            nn.BatchNorm3d(16),
+            nn.ELU(),           #nn.adaptive有3d。。普通的ELU()不清楚对三维数据的激活时怎么作用的？？？？
+            nn.AvgPool3d((4,1,1)),       #这里eegnet本身没有stride（,stride=(1,2,2)）
+            nn.Dropout(self.drop_out)
+        )
+        
+        self.block_3 = nn.Sequential(
+            # nn.ZeroPad3d((7, 8, 0, 0)),
+            nn.Conv3d(16, 16, (16, 1,1), padding=(7,0,0),groups=16, bias=False),
+            nn.Conv3d(16, 16, (1, 1, 1), bias=False),
+            nn.BatchNorm3d(16), 
+            nn.ELU(),
+            nn.AvgPool3d((4, 1, 1)),        
+            nn.Dropout(self.drop_out)
+        )
+        
+        # fc1 = nn.Linear((5*32 * (256 // 64)), num_classes)
+        self.fc1 = nn.Linear(17280, num_classes)
+    
+
+
+    
+    def forward(self, x):
+        # x = x.reshape(x.shape[0], 1, x.shape[1], x.shape[2])
+        x = self.block_1(x)
+        # fea = x
+        print('3d_outpuy',x.size())
+        x = self.block_2(x)
+        print('3d_outpuy',x.size())
+        x = self.block_3(x)
+        print('3d_outpuy',x.size())
+        x = x.view(x.size(0), -1)        
+
+        logits = self.fc1(x)
+
+        probas = F.softmax(logits, dim=1)
+        return probas
+
 
 if __name__ == "__main__":
     data = torch.tensor(np.random.rand(64, 64, 256)).to(torch.float32)
