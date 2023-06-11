@@ -1184,9 +1184,6 @@ class TimesBlock(nn.Module):
         return res
 
 class TimesNet(nn.Module):
-    """
-    Paper link: https://openreview.net/pdf?id=ju_Uqw384Oq
-    """
 
     def __init__(self, configs):
         super(TimesNet, self).__init__()
@@ -1202,7 +1199,6 @@ class TimesNet(nn.Module):
         self.layer = configs.e_layers
         self.layer_norm = nn.LayerNorm(configs.d_model)
 
-        if self.task_name == 'classification':
             self.act = F.gelu
             self.dropout = nn.Dropout(configs.dropout)
             self.projection = nn.Linear(
