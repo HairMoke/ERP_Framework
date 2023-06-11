@@ -21,7 +21,7 @@ from sklearn.linear_model import LinearRegression, LogisticRegression
 from Manage.loss import LossFunction
 from Utils.tools import EarlyStopping, adjust_learning_rate, cal_accuracy
 from data_provider.data_factory import data_provider
-from Manage.model import TimesNet
+
 import os
 import time
 import argparse
@@ -866,7 +866,7 @@ class TaskManage:
                 msoa.test(self.data, self.epoch)
                 # print("\n *****************************************Test Finish!***********************************\n")
         if self.model_name == 'PLNet' or self.model_name == 'EEGNet' or self.model_name == 'EEGInception' or \
-            self.model_name == 'DeepConvNet':
+            self.model_name == 'DeepConvNet'or self.model_name == 'EEG3d':
             # 通用模型训练
             if(self.task_type == True):
                 general = GeneralTrainTask(self.sub_id, self.model, self.device, self.dataset_name)
@@ -902,22 +902,24 @@ class TaskManage:
                 clf.train(self.data['x'], self.data['y'])
             else:
                 clf.test(self.data['x'], self.data['y'])
-        if self.model_name == 'TimesNet':
-            # TimesNet = Exp_Classification
-            Exp = Exp_Classification
+
+            
+        # if self.model_name == 'TimesNet':
+        #     # TimesNet = Exp_Classification
+        #     Exp = Exp_Classification
 
 
-            exp = Exp()  # set experiments
-            print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
-            exp.train()
+        #     exp = Exp()  # set experiments
+        #     print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
+        #     exp.train()
 
-            print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-            exp.test()
-            # torch.cuda.empty_cache()
+        #     print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
+        #     exp.test()
+        #     # torch.cuda.empty_cache()
 
 
-            torch.cuda.empty_cache()
-        if (self.task_type == True):
-            Exp.train(self.data)
-        else:
-            Exp.test(self.data)
+        #     torch.cuda.empty_cache()
+        # if (self.task_type == True):
+        #     Exp.train(self.data)
+        # else:
+        #     Exp.test(self.data)

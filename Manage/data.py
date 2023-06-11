@@ -12,8 +12,51 @@ from Utils.preprocess import DataProcess
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
+import torch
 
+class EEG3dDataGenerate(Dataset):
+    def __init__(self, Dataset, x, y, sub_id, mode):
+        # 数据集类型，输入数据，输入标签
+        self.dataset = Dataset
+        self.x = x
+        self.y = y
+        field = "train" if mode == True else "test"
+        try:
+            self.EEGmesh3d = np.load(os.path.join(os.getcwd(), 'Dataset', self.dataset, f'S{sub_id:>02d}', f'x_EEGmesh3d_{field}.npy'))
+            self.y = np.load(os.path.join(os.getcwd(), 'Dataset', self.dataset, f'S{sub_id:>02d}', f'y_EEGmesh3d_{field}.npy'))
+        except:
+            self.EEGmesh3d= self._generate_by_mtr(x)
+            np.save(os.path.join(os.getcwd(), 'Dataset', self.dataset, f'S{sub_id:>02d}', f'x_EEGmesh3d_{field}.npy'), self.EEGmesh3d)
+            np.save(os.path.join(os.getcwd(), 'Dataset', self.dataset, f'S{sub_id:>02d}', f'y_EEGmesh3d_{field}.npy'), self.y)
 
+            print(self.EEGmesh3d.shape, self.y.shape)
+            
+    def __getitem__(self, index):
+        x = self.x[index, ...]
+        y = self.y[index, ...]
+        return x, y
+    
+    def __len__(self):
+        return len(self.x)
+    def _generate_by_mtr(self, data):
+        #data维度（N,C,T）
+        x_train = torch.tensor(data)
+        x_train = x_train.squeeze(1)
+        x_train.numpy()
+        EEGmesh = np.zeros((10,11,256),dtype=np.float32)
+        
+        EEGmesh[0,4:7,:] = (x_train[1,1,:],x_train[1,32,:],x_train[1,33,:])
+        EEGmesh[1,3:8,:] = (x_train[1,1,:],x_train[1,2,:],x_train[1,36,:],x_train[1,35,:],x_train[1,34,:])
+        EEGmesh[2,1:10,:] = (x_train[1,6,:],x_train[1,5,:],x_train[1,4,:],x_train[1,3,:],x_train[1,37,:],x_train[1,38,:],x_train[1,39,:],x_train[1,40,:],x_train[1,41,:])
+        EEGmesh[3,1:10,:] = (x_train[1,7,:],x_train[1,8,:],x_train[1,9,:],x_train[1,10,:],x_train[1,46,:],x_train[1,45,:],x_train[1,44,:],x_train[1,43,:],x_train[1,42,:])
+        EEGmesh[4,1:10,:] = (x_train[1,14,:],x_train[1,13,:],x_train[1,12,:],x_train[1,11,:],x_train[1,47,:],x_train[1,48,:],x_train[1,49,:],x_train[1,50,:],x_train[1,51,:])
+        EEGmesh[5,1:10,:] = (x_train[1,15,:],x_train[1,16,:],x_train[1,17,:],x_train[1,18,:],x_train[1,31,:],x_train[1,55,:],x_train[1,54,:],x_train[1,53,:],x_train[1,52,:])
+        EEGmesh[6,:,:] = (x_train[1,23,:],x_train[1,22,:],x_train[1,21,:],x_train[1,20,:],x_train[1,19,:],x_train[1,30,:],x_train[1,56,:],x_train[1,57,:],x_train[1,58,:],x_train[1,59,:],x_train[1,60,:])
+        EEGmesh[7,3:8,:] = (x_train[1,24,:],x_train[1,25,:],x_train[1,29,:],x_train[1,62,:],x_train[1,61,:])
+        EEGmesh[8,4:7,:] = (x_train[1,26,:],x_train[1,28,:],x_train[1,63,:])
+        EEGmesh[9,5,:] = (x_train[1,27,:])
+
+        return EEGmesh
 
 class MSOADataGenerate(Dataset):
     def __init__(self, Dataset, x, y, sub_id, mode):
@@ -192,6 +235,9 @@ class DataManage:
             else:
                 data = GeneralData(x, y)
                 data_loader = DataLoader(data, batch_size=self.batch_size, shuffle=(self.mode is True))
+        elif self.method_name == 'EEG3d':
+            data = EEG3dDataGenerate(self.dataset, x, y, self.sub_id, self.mode)
+            data_loader = DataLoader(data, batch_size=self.batch_size, shuffle=(self.mode is True))
         else:
             data = GeneralData(x, y)
             data_loader = DataLoader(data, batch_size=self.batch_size, shuffle=(self.mode is True))

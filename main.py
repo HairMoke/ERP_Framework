@@ -10,7 +10,7 @@ import warnings
 import gc
 warnings.filterwarnings("ignore")
  
-CONTROL = [False ,False,True,False]  # 数据集控制位，True表示计算该数据集，False反之 （用于多服务器训练）
+CONTROL = [True,False ,False,False]  # 数据集控制位，True表示计算该数据集，False反之 （用于多服务器训练）
 NUMCLASSES = 2
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 print('DEVICE: ', DEVICE)
@@ -19,10 +19,10 @@ print('DEVICE: ', DEVICE)
 # ModelType = [True, True, True, True, True, False, False, False, False],#这里ModelType的布尔型只代表该方法是不是传统算法
 # Model = [MSOA(NUMCLASSES), EEGNet(NUMCLASSES), DeepConvNet(NUMCLASSES), EEGInception(NUMCLASSES), 
 #          PLNet(NUMCLASSES), HDCA(NUMCLASSES), xDAWNRG(NUMCLASSES), rLDA(NUMCLASSES), FDN(NUMCLASSES)]
-ModelName =  ["EEGNet", "DeepConvNet", "EEGInception", "PLNet", "HDCA", "xDAWNRG", "rLDA","TimesNet",'EEG3d']
+ModelName =  ["EEGNet", "DeepConvNet", "EEGInception", "PLNet", "HDCA", "xDAWNRG", "rLDA",'EEG3d']
 ModelType = [True, True, True, True, False, False, False, False,True,True],#这里ModelType的布尔型只代表该方法是不是传统算法
 Model = [EEGNet(NUMCLASSES), DeepConvNet(NUMCLASSES), EEGInception(NUMCLASSES), 
-         PLNet(NUMCLASSES), HDCA(NUMCLASSES), xDAWNRG(NUMCLASSES), rLDA(NUMCLASSES),TimesNet(NUMCLASSES),EEG3d(NUMCLASSES)]
+         PLNet(NUMCLASSES), HDCA(NUMCLASSES), xDAWNRG(NUMCLASSES), rLDA(NUMCLASSES),EEG3d(NUMCLASSES)]
 
 if __name__ == '__main__':
     # 加载工程参数
@@ -43,7 +43,7 @@ if __name__ == '__main__':
                 # 数据集中的被试层
                 # 完成数据加载操作
                 # for idx in range(len(ModelName)):
-                for idx in [8]:
+                for idx in [7]:
                     # 对于不同模型
                     model = Model[idx].to(DEVICE)
                     print(model)
