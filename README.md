@@ -4,3 +4,7 @@
 训练/测试阶段严格分离
 
 数据装载，训练，推理，模块化编写
+
+
+
+数据集地址：[EEG-RSVP 数据集（THU，CAS，DPN） --- EEG-RSVP dataset(THU,CAS,DPN)](https://www.kaggle.com/datasets/hairmonk/eeg-rsvp-datasetthucasdpn)
