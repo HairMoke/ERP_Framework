@@ -1,7 +1,6 @@
 {
     "DatasetName": ["CAS", "THU","DPN","BITBRAIN"],
     "Dataset": {
-        
         "CAS": {
             "subject_num": 14
         },

@@ -207,6 +207,8 @@ class DataManage:
 
         # 加载原始数据                  #请把数据预处理为x:（N，64，256)，y:(N,)的.npy文件
         field = "train" if self.mode == True else "test"
+        # x = np.load(os.path.join(os.getcwd(),'ERP_Framework', 'Dataset', self.dataset, f'S{self.sub_id:>02d}', f'x_{field}.npy'))
+        # y = np.load(os.path.join(os.getcwd(), 'ERP_Framework','Dataset', self.dataset, f'S{self.sub_id:>02d}', f'y_{field}.npy'))
         x = np.load(os.path.join(os.getcwd(), 'Dataset', self.dataset, f'S{self.sub_id:>02d}', f'x_{field}.npy'))
         y = np.load(os.path.join(os.getcwd(), 'Dataset', self.dataset, f'S{self.sub_id:>02d}', f'y_{field}.npy'))
 

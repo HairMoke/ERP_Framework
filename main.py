@@ -10,7 +10,7 @@ import warnings
 import gc
 warnings.filterwarnings("ignore")
  
-CONTROL = [True,False ,False,False]  # 数据集控制位，True表示计算该数据集，False反之 （用于多服务器训练）
+CONTROL = [True,False,False,False]  # 数据集控制位，True表示计算该数据集，False反之 （用于多服务器训练）
 NUMCLASSES = 2
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 print('DEVICE: ', DEVICE)
@@ -26,7 +26,7 @@ Model = [EEGNet(NUMCLASSES), DeepConvNet(NUMCLASSES), EEGInception(NUMCLASSES),
 
 if __name__ == '__main__':
     # 加载工程参数
-    with open('config.json', 'r') as f:
+    with open('./config.json', 'r') as f:
         proj_config_para = json.load(f)
 
     _dataset_name = proj_config_para['DatasetName']
@@ -90,7 +90,7 @@ if __name__ == '__main__':
 
                     score = evaluateManager.calculate_metric_score()
 
-                    # print("AUC: ", auc)
+                    print("AUC: ", auc)
 
                     # 结果以及模型保存
                     update_result(score, _dataset_name[dataset_num], ModelName[idx], subject_id, ModelType[0][idx])
